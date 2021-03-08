@@ -3,23 +3,32 @@ import Card from '../../components/Card'
 import Layout from '../../components/Layout'
 import Table from '../../components/Table'
 import Title from '../../components/Title'
-import { useQuery } from '../../lib/graphql'
+import { useMutation, useQuery } from '../../lib/graphql'
 import Link from 'next/link'
 
-const query = {
-  query: `
-    query{
-      getAllCategories{
-        id
-        name
-        slug
-      }
-    }
-  `
+const DELETE_CATEGORY = `
+  mutation deleteCategory($id: String!) {
+    deleteCategory (id: $id)
 }
+`
+
+const GET_ALL_CATEGORIES = `
+  query{
+    getAllCategories{
+      id
+      name
+      slug
+    }
+  }
+  `
 
 const Index = () => {
-  const { data, error } = useQuery(query)
+  const { data, mutate } = useQuery(GET_ALL_CATEGORIES)
+  const [ deleteData, deleteCategory] = useMutation(DELETE_CATEGORY)
+  const remove = id => async() => {
+    await deleteCategory({ id })
+    mutate()
+  }
   return (
     <Layout>
       <Title>Gerenciar categorias</Title>
@@ -31,6 +40,12 @@ const Index = () => {
       </div>
       <div className='flex flex-col mt-8'>
         <div className='-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'>
+        {data && data.getAllCategories && data.getAllCategories.length === 0 && (
+        <div className="bg-red-lightest border border-red-light text-red-dark pl-4 pr-8 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">Nenhuma categoria cadastrada!</span>
+        </div>
+        )}
+        {data && data.getAllCategories && data.getAllCategories.length > 0 && (
           <div className='align-middle inline-block min-w-full shadow overflow-hidden sm:rounded-lg border-b border-gray-200'>
             <Table>
                 <Table.Head>
@@ -60,6 +75,13 @@ const Index = () => {
                         className='text-indigo-600 hover:text-indigo-900'
                       >
                         Edit
+                      </a>{' '}|{' '}
+                      <a
+                        href='#'
+                        className='text-indigo-600 hover:text-indigo-900'
+                        onClick={remove(item.id)}
+                      >
+                        Remove
                       </a>
                     </Table.Td>
                   </Table.Tr>)})
@@ -67,6 +89,7 @@ const Index = () => {
                 </Table.Body>
               </Table>
           </div>
+          )}
         </div>
       </div>
     </Layout>
